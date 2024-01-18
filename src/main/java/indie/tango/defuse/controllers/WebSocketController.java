@@ -1,12 +1,16 @@
 package indie.tango.defuse.controllers;
+
 import indie.tango.defuse.models.GameSession;
 import indie.tango.defuse.models.Message;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessageType;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
+
+import java.util.List;
 
 @Controller
 public class WebSocketController {
@@ -14,8 +18,11 @@ public class WebSocketController {
     @Autowired
     private GameSession gameSession;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
     @MessageMapping("/createGame")
-    @SendToUser("/topic/gameCode")
+    @SendToUser("/queue/gameCode")
     public String createGame(SimpMessageHeaderAccessor headerAccessor) {
         String gameCode = gameSession.generateGameCode();
         String playerSessionId = headerAccessor.getSessionId();
@@ -24,17 +31,14 @@ public class WebSocketController {
     }
 
     @MessageMapping("/joinGame")
-    @SendToUser("/topic/joinResult")
+    @SendToUser("/queue/joinResult")
     public String joinGame(String gameCode, SimpMessageHeaderAccessor headerAccessor) {
         String playerSessionId = headerAccessor.getSessionId();
         String existingGameCode = gameSession.getGameCodeForPlayer(playerSessionId);
         if (existingGameCode != null) {
-            // Користувач вже підключений до гри
             return "Already joined a game";
         }
 
-        // Перевірте, чи існує гра з вказаним кодом, і якщо так, додайте гравця
-        // Додайте інші перевірки та логіку за потреби
         if (gameSession.isGameExists(gameCode)) {
             gameSession.addPlayerSession(gameCode, playerSessionId);
             return "Successfully joined the game";
@@ -44,22 +48,27 @@ public class WebSocketController {
     }
 
     @MessageMapping("/sendMessage")
-    @SendTo("/topic/chat")
-    public Message sendMessage(Message message, SimpMessageHeaderAccessor headerAccessor) {
+    public void sendMessage(Message message, SimpMessageHeaderAccessor headerAccessor) {
         String playerSessionId = headerAccessor.getSessionId();
         String gameCode = gameSession.getGameCodeForPlayer(playerSessionId);
-
-        // Перевірте, чи гравець насправді належить до якої-небудь гри
         if (gameCode != null) {
-            // Додайте інші перевірки та логіку за потреби
-
-            // Включіть інформацію про відправника в повідомлення
             message.setSender(playerSessionId);
+            message.setGameCode(gameCode);
 
-            return message;
-        } else {
-            // Гравець не знаходиться в жодній грі
-            return null;
+            // Отримайте всі сесії гравців для даної гри
+            List<String> playerSessions = gameSession.getPlayerSessions(gameCode);
+
+            // Відправте повідомлення кожному гравцеві в межах гри
+            for (String session : playerSessions) {
+                String username = session;  // username - це ім'я користувача, яке ви хочете використовувати
+                String destination = "/user/" + username + "/queue/chat";
+
+                SimpMessageHeaderAccessor headerAccessorForUser = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
+                headerAccessorForUser.setSessionId(session);
+                headerAccessorForUser.setLeaveMutable(true);
+
+                messagingTemplate.convertAndSendToUser(session, "/queue/chat", message, headerAccessorForUser.getMessageHeaders());
+            }
         }
     }
 }

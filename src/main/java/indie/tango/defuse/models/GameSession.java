@@ -2,7 +2,9 @@ package indie.tango.defuse.models;
 
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -22,6 +24,16 @@ public class GameSession {
 
     public String getGameCodeForPlayer(String playerSessionId) {
         return playerSessions.get(playerSessionId);
+    }
+
+    public List<String> getPlayerSessions(String gameCode) {
+        List<String> sessions = new ArrayList<>();
+        for (Map.Entry<String, String> entry : playerSessions.entrySet()) {
+            if (entry.getValue().equals(gameCode)) {
+                sessions.add(entry.getKey());
+            }
+        }
+        return sessions;
     }
 
     private String generateRandomCode() {
