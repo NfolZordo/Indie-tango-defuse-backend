@@ -1,14 +1,16 @@
 package indie.tango.defuse.models;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Message {
 
     private String content;
     private String sender;
 
-    public Message(String content, String sender) {
+    @JsonCreator
+    public Message(@JsonProperty("content") String content) {
         this.content = content;
-        this.sender = sender;
     }
 
     public String getContent() {

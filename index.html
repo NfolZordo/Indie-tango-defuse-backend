@@ -10,8 +10,25 @@
 
 <body>
 
-    <input type="text" id="messageInput" placeholder="Enter your message">
-    <button onclick="sendMessage()">Send</button>
+    <div>
+        <p>Your Game Code:</p>
+        <p id="gameCodeDisplay"></p>
+    </div>
+
+    <div>
+        <button onclick="createGame()">Create Game</button>
+    </div>
+
+    <div>
+        <input type="text" id="joinGameInput" placeholder="Enter game code">
+        <button onclick="joinGame()">Join Game</button>
+    </div>
+
+    <div>
+        <input type="text" id="messageInput" placeholder="Enter your message">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
     <ul id="chatMessages"></ul>
 
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
@@ -25,25 +42,39 @@
             stompClient = Stomp.over(socket);
             stompClient.connect({}, function (frame) {
                 console.log('Connected: ' + frame);
-                stompClient.subscribe('/user/topic/chat', function (message) {
+
+                // Після підключення вивести код гри
+                stompClient.subscribe('/user/topic/gameCode', function (message) {
+                    var gameCode = message.body;
+                    console.log("Received game code: " + gameCode);
+                    document.getElementById('gameCodeDisplay').innerText = gameCode;
+                });
+
+                // Підписка на повідомлення чату
+                stompClient.subscribe('/topic/chat', function (message) {
                     showMessage(JSON.parse(message.body));
                 });
             });
         }
 
-        function disconnect() {
-            if (stompClient !== null) {
-                stompClient.disconnect();
-            }
-            console.log("Disconnected");
+        function createGame() {
+            stompClient.send("/app/createGame", {}, {});
+        }
+
+        function joinGame() {
+            var gameCode = document.getElementById('joinGameInput').value;
+            stompClient.send("/app/joinGame", {}, gameCode);
         }
 
         function sendMessage() {
             var messageInput = document.getElementById('messageInput');
-            var message = messageInput.value;
-            stompClient.send("/app/sendMessage", {}, JSON.stringify({ 'content': message }));
+            var messageContent = messageInput.value;
+            var message = { 'content': messageContent };  // Створіть об'єкт Message
+
+            stompClient.send("/app/sendMessage", {}, JSON.stringify(message));  // Конвертуйте у JSON
             messageInput.value = '';
         }
+
 
         function showMessage(message) {
             var chatMessages = document.getElementById('chatMessages');
@@ -56,7 +87,6 @@
             connect();
         });
     </script>
-
 </body>
 
 </html>
