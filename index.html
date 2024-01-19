@@ -29,6 +29,11 @@
         <button onclick="sendMessage()">Send</button>
     </div>
 
+    <div>
+        <input type="text" id="timerInput" placeholder="Enter your message">
+        <button onclick="startTimer()">Send</button>
+    </div>
+
     <ul id="chatMessages"></ul>
 
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
@@ -76,6 +81,15 @@
             var message = { 'content': messageContent };  // Створіть об'єкт Message
 
             stompClient.send("/app/sendMessage", {}, JSON.stringify(message));  // Конвертуйте у JSON
+            messageInput.value = '';
+        }
+        // Функція для запуску таймера
+        function startTimer() {
+            var messageInput = document.getElementById('timerInput');
+            var messageContent = messageInput.value;
+            var message = { 'content': messageContent };  // Створіть об'єкт Message
+
+            stompClient.send("/app/startTimer", {}, JSON.stringify(message));  // Конвертуйте у JSON
             messageInput.value = '';
         }
 

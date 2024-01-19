@@ -5,12 +5,12 @@ import indie.tango.defuse.models.Message;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import org.springframework.messaging.simp.SimpMessageType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Controller;
 
-import java.util.List;
+import java.util.concurrent.ScheduledFuture;
 
 @Controller
 public class WebSocketController {
@@ -20,6 +20,11 @@ public class WebSocketController {
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+
+    @Autowired
+    private TaskScheduler taskScheduler;
+
+    private ScheduledFuture<?> timerTask;
 
     @MessageMapping("/createGame")
     @SendToUser("/queue/gameCode")
@@ -54,21 +59,56 @@ public class WebSocketController {
         if (gameCode != null) {
             message.setSender(playerSessionId);
             message.setGameCode(gameCode);
+            gameSession.sendToUsers(gameCode, "/queue/chat", message);
 
-            // Отримайте всі сесії гравців для даної гри
-            List<String> playerSessions = gameSession.getPlayerSessions(gameCode);
+        }
+    }
 
-            // Відправте повідомлення кожному гравцеві в межах гри
-            for (String session : playerSessions) {
-                String username = session;  // username - це ім'я користувача, яке ви хочете використовувати
-                String destination = "/user/" + username + "/queue/chat";
+    @MessageMapping("/startTimer")
+    @SendToUser("/queue/startTimer")
+    public void startTimer(Message message, SimpMessageHeaderAccessor headerAccessor) {
+        String playerSessionId = headerAccessor.getSessionId();
+        String gameCode = gameSession.getGameCodeForPlayer(playerSessionId);
+//        gameSession.putTimer(gameCode,Integer.parseInt(message.getContent()));
+        gameSession.startTimer(message, gameCode, Integer.parseInt(message.getContent()));
+    }
+    @MessageMapping("/startTimer2")
+    @SendToUser("/queue/startTimer2")
+    public void startTimer2(Message message, SimpMessageHeaderAccessor headerAccessor) {
+        String playerSessionId = headerAccessor.getSessionId();
+        String gameCode = gameSession.getGameCodeForPlayer(playerSessionId);
+        gameSession.putTimer(gameCode,Integer.parseInt(message.getContent()));
+        // Перевірка, чи таймер вже запущено для даної гри
+        if (timerTask == null || timerTask.isCancelled()) {
+            // Стартувати таймер, який відсилатиме значення кожну секунду
+            timerTask = taskScheduler.scheduleAtFixedRate(() -> {
+                int timeLeft = gameSession.decrementTimer(gameCode);
+                // Відсилати значення таймеру кожній сесії гравця в грі
+                message.setContent(Integer.toString(timeLeft));
+                gameSession.sendToUsers(gameCode, "/queue/chat", message);
 
-                SimpMessageHeaderAccessor headerAccessorForUser = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
-                headerAccessorForUser.setSessionId(session);
-                headerAccessorForUser.setLeaveMutable(true);
+                // Якщо час вийшов, зупинити таймер
+                if (timeLeft == 0) {
+                    stopTimer();
+                }
+            }, 100);
+        }
+    }
 
-                messagingTemplate.convertAndSendToUser(session, "/queue/chat", message, headerAccessorForUser.getMessageHeaders());
-            }
+//    private void sendToUser(String gameCode, String destination, Message message) {
+//        List<String> playerSessions = gameSession.getPlayerSessions(gameCode);
+//        for (String session : playerSessions) {
+//            SimpMessageHeaderAccessor headerAccessorForUser = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
+//            headerAccessorForUser.setSessionId(session);
+//            headerAccessorForUser.setLeaveMutable(true);
+//            messagingTemplate.convertAndSendToUser(session, destination, message, headerAccessorForUser.getMessageHeaders());
+//        }
+//    }
+    @MessageMapping("/stopTimer")
+    public void stopTimer() {
+        if (timerTask != null && !timerTask.isCancelled()) {
+            timerTask.cancel(false);
+            timerTask = null;
         }
     }
 }
