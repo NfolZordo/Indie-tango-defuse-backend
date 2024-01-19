@@ -6,7 +6,7 @@ import org.springframework.messaging.simp.SimpMessageType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
-
+import java.util.Random;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +62,9 @@ public class GameSession {
         return gameTimers.compute(gameCode, (key, value) -> value != null && value > 0 ? value - 1 : 0);
     }
     private String generateRandomCode() {
-        return "GAME-" + UUID.randomUUID().toString().substring(0, 8);
+        Random random = new Random();
+        int code = 10000 + random.nextInt(90000); // Генерує випадковий код з п'яти цифр
+        return String.valueOf(code);
     }
 
     public void startTimer(Message message, String gameCode, int initialTime) {
