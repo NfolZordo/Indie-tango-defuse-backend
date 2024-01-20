@@ -72,8 +72,8 @@ public class GameSession {
         if (!timerTasks.containsKey(gameCode) || timerTasks.get(gameCode).isCancelled()) {
             ScheduledFuture<?> timerTask = taskScheduler.scheduleAtFixedRate(() -> {
                 int timeLeft = decrementTimer(gameCode);
-                message.setContent(Integer.toString(timeLeft));
-                sendToUsers(gameCode, "/queue/chat", message);
+//                message.setContent(Integer.toString(timeLeft));
+                sendToUsers(gameCode, "/queue/getTimerValue", Integer.toString(timeLeft));
 
                 if (timeLeft == 0) {
                     stopTimer(gameCode);
@@ -92,7 +92,7 @@ public class GameSession {
         }
     }
 
-    public void sendToUsers(String gameCode, String destination, Message message) {
+    public <T> void sendToUsers(String gameCode, String destination, T message) {
         List<String> playerSessions = getPlayerSessions(gameCode);
         for (String session : playerSessions) {
             SimpMessageHeaderAccessor headerAccessorForUser = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
