@@ -54,10 +54,11 @@ public class GameService {
         }
     }
 
-    public void startTimer(Message message, SimpMessageHeaderAccessor headerAccessor) {
+    public void startTimer(SimpMessageHeaderAccessor headerAccessor, String gameMode) {
         String playerSessionId = headerAccessor.getSessionId();
+        gameSession.setGameMod(gameMode);
         String gameCode = gameSession.getGameCodeForPlayer(playerSessionId);
-        gameSession.setTimer(gameCode,Integer.parseInt(message.getContent()));
+        gameSession.setTimer(gameCode);
         if (!gameSession.getTimerTasks().containsKey(gameCode) || gameSession.getTimerTasks().get(gameCode).isCancelled()) {
             ScheduledFuture<?> timerTask = taskScheduler.scheduleAtFixedRate(() -> {
                 int timeLeft = gameSession.decrementTimer(gameCode);
@@ -76,17 +77,17 @@ public class GameService {
         String gameCode = gameSession.getGameCodeForPlayer(playerSessionId);
         gameSession.stopTimer(gameCode);
     }
-
-    public void startTimer(String gameCode, int initialTime) {
-        gameSession.setTimer(gameCode,initialTime);
-        if (!gameSession.getTimerTasks().containsKey(gameCode) || gameSession.getTimerTasks().get(gameCode).isCancelled()) {
-            ScheduledFuture<?> timerTask = taskScheduler.scheduleAtFixedRate(() -> {
-                handleTimerTick(gameCode);
-                }
-            , 1000);
-            gameSession.getTimerTasks().put(gameCode, timerTask);
-        }
-    }
+//
+//    public void startTimer(String gameCode) {
+//        gameSession.setTimer(gameCode);
+//        if (!gameSession.getTimerTasks().containsKey(gameCode) || gameSession.getTimerTasks().get(gameCode).isCancelled()) {
+//            ScheduledFuture<?> timerTask = taskScheduler.scheduleAtFixedRate(() -> {
+//                handleTimerTick(gameCode);
+//                }
+//            , 1000);
+//            gameSession.getTimerTasks().put(gameCode, timerTask);
+//        }
+//    }
 
     private void handleTimerTick(String gameCode) {
         int timeLeft = gameSession.decrementTimer(gameCode);

@@ -1,8 +1,6 @@
 package indie.tango.defuse.models;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import org.springframework.messaging.simp.SimpMessageType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
@@ -20,10 +18,30 @@ public class GameSession {
     private final Map<String, Integer> gameTimers = new ConcurrentHashMap<>();
     private Map<String, ScheduledFuture<?>> timerTasks = new ConcurrentHashMap<>();
 
+    private GameMod gameMod;
+
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
     @Autowired
     private TaskScheduler taskScheduler;
+
+
+    public GameMod getGameMod() {
+        return gameMod;
+    }
+
+    public void setGameMod(String gameMod) {
+        switch (gameMod) {
+            case ("easy"):
+                this.gameMod = GameMod.EASY;
+            case ("normal"):
+                this.gameMod = GameMod.NORMAL;
+                break;
+            case ("hard"):
+                this.gameMod = GameMod.HARD;
+                break;
+        }
+    }
 
     public String generateGameCode() {
         String gameCode = generateRandomCode();
@@ -59,8 +77,8 @@ public class GameSession {
         return activeGames.containsKey(gameCode);
     }
 
-    public void setTimer(String gameCode, int timerValue) {
-        gameTimers.put(gameCode, timerValue);
+    public void setTimer(String gameCode) {
+        gameTimers.put(gameCode, gameMod.getTime());
     }
 
     public int decrementTimer(String gameCode) {
@@ -84,4 +102,5 @@ public class GameSession {
             timerTasks.remove(gameCode);
         }
     }
+
 }
