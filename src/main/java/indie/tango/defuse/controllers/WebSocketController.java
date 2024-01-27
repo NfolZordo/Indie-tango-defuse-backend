@@ -3,11 +3,20 @@ package indie.tango.defuse.controllers;
 import indie.tango.defuse.models.Message;
 import indie.tango.defuse.services.GameService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.MediaType;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @Controller
 public class WebSocketController {
@@ -21,19 +30,27 @@ public class WebSocketController {
         return gameService.createGame(headerAccessor);
     }
 
+    @MessageMapping("/getTask")
+    @SendToUser("/queue/getTask")
+    public ResponseEntity<byte[]> getTask(String gameCode) throws IOException {
+        byte[] imageBytes = gameService.getTask(gameCode);
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_JPEG)
+                .body(imageBytes);
+    }
+
     @MessageMapping("/joinGame")
     @SendToUser("/queue/joinResult")
     public String joinGame(@Payload String gameCode, SimpMessageHeaderAccessor headerAccessor) {
         return gameService.joinGame(gameCode, headerAccessor);
     }
 
-    @MessageMapping("/sendMessage")
-    public void sendMessage(Message message, SimpMessageHeaderAccessor headerAccessor) {
-        gameService.sendMessage(message, headerAccessor);
-    }
+//    @MessageMapping("/sendMessage")
+//    public void sendMessage(Message message, SimpMessageHeaderAccessor headerAccessor) {
+//        gameService.sendMessage(message, headerAccessor);
+//    }
 
     @MessageMapping("/startTimer")
-    @SendToUser("/queue/startTimer")
     public void startTimer(SimpMessageHeaderAccessor headerAccessor, String gameMode) {
         gameService.startTimer(headerAccessor, gameMode);
     }

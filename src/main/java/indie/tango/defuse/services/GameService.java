@@ -1,14 +1,19 @@
 package indie.tango.defuse.services;
 
 import indie.tango.defuse.models.GameSession;
-import indie.tango.defuse.models.Message;
+import org.springframework.core.io.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessageType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 
@@ -44,15 +49,15 @@ public class GameService {
         }
     }
 
-    public void sendMessage(Message message, SimpMessageHeaderAccessor headerAccessor) {
-        String playerSessionId = headerAccessor.getSessionId();
-        String gameCode = gameSession.getGameCodeForPlayer(playerSessionId);
-        if (gameCode != null) {
-            message.setSender(playerSessionId);
-            message.setGameCode(gameCode);
-            sendToUsers(gameSession.getPlayerSessions(gameCode), "/queue/chat", message);
-        }
-    }
+//    public void sendMessage(Message message, SimpMessageHeaderAccessor headerAccessor) {
+//        String playerSessionId = headerAccessor.getSessionId();
+//        String gameCode = gameSession.getGameCodeForPlayer(playerSessionId);
+//        if (gameCode != null) {
+//            message.setSender(playerSessionId);
+//            message.setGameCode(gameCode);
+//            sendToUsers(gameSession.getPlayerSessions(gameCode), "/queue/chat", message);
+//        }
+//    }
 
     public void startTimer(SimpMessageHeaderAccessor headerAccessor, String gameMode) {
         String playerSessionId = headerAccessor.getSessionId();
@@ -89,14 +94,21 @@ public class GameService {
 //        }
 //    }
 
-    private void handleTimerTick(String gameCode) {
-        int timeLeft = gameSession.decrementTimer(gameCode);
-        sendToUsers(gameSession.getPlayerSessions(gameCode), "/queue/getTimerValue", Integer.toString(timeLeft));
-        if (timeLeft == 0) {
-            gameSession.stopTimer(gameCode);
-        }
-    }
+//    private void handleTimerTick(String gameCode) {
+//        int timeLeft = gameSession.decrementTimer(gameCode);
+//        sendToUsers(gameSession.getPlayerSessions(gameCode), "/queue/getTimerValue", Integer.toString(timeLeft));
+//        if (timeLeft == 0) {
+//            gameSession.stopTimer(gameCode);
+//        }
+//    }
 
+    public byte[] getTask(String gameCode) throws IOException {
+        char lastChar = gameCode.charAt(gameCode.length() - 1);
+
+        Path filePath = Paths.get("src\\main\\resources\\task\\itd_" + lastChar + ".jpg");
+        byte[] imageBytes = Files.readAllBytes(filePath);
+        return imageBytes;
+    }
     private <T> void sendToUsers(List<String> playerSessions, String destination, T message) {
         for (String session : playerSessions) {
             SimpMessageHeaderAccessor headerAccessorForUser = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
