@@ -34,6 +34,7 @@ public class GameSession {
         switch (gameMod) {
             case ("easy"):
                 this.gameMod = GameMod.EASY;
+                break;
             case ("normal"):
                 this.gameMod = GameMod.NORMAL;
                 break;
