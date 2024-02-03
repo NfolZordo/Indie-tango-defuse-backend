@@ -17,6 +17,8 @@ public class GameSession {
     private final Map<String, Boolean> activeGames = new ConcurrentHashMap<>();
     private final Map<String, Integer> gameTimers = new ConcurrentHashMap<>();
     private Map<String, ScheduledFuture<?>> timerTasks = new ConcurrentHashMap<>();
+    private Map<String, List<Constants.Scenario>> stepsTaken = new ConcurrentHashMap<>();
+    private Map<String, Integer> stepsCount = new ConcurrentHashMap<>();
 
     private GameMod gameMod;
 
@@ -60,6 +62,10 @@ public class GameSession {
         playerSessions.put(playerSessionId, gameCode);
     }
 
+    public void initStepsCount(String gameCode) {
+        this.stepsCount.put(gameCode, 0);
+    }
+
     public String getGameCodeForPlayer(String playerSessionId) {
         return playerSessions.get(playerSessionId);
     }
@@ -86,8 +92,6 @@ public class GameSession {
         return gameTimers.compute(gameCode, (key, value) -> value != null && value > 0 ? value - 1 : 0);
     }
 
-
-
     public Map<String, ScheduledFuture<?>> getTimerTasks() {
         return timerTasks;
     }
@@ -104,4 +108,19 @@ public class GameSession {
         }
     }
 
+    public String doStep(String gameCode, String button) {
+        int scenarioNumber = Integer.parseInt(gameCode.substring(gameCode.length() - 1));
+        String result;
+        if (Constants.scenarios.get(scenarioNumber).steps.get(this.stepsCount.get(gameCode)).equals(button)) {
+            if (Constants.scenarios.get(scenarioNumber).steps.size() == this.stepsCount.get(gameCode) + 1) {
+                result = "win";
+            } else {
+                result = "true";
+            }
+        } else {
+            result = "false";
+        }
+        this.stepsCount.put(gameCode,this.stepsCount.get(gameCode) + 1);
+        return result;
+    }
 }

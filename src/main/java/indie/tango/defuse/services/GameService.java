@@ -32,6 +32,7 @@ public class GameService {
         String gameCode = gameSession.generateGameCode();
         String playerSessionId = headerAccessor.getSessionId();
         gameSession.addPlayerSession(gameCode, playerSessionId);
+        gameSession.initStepsCount(gameCode);
         return gameCode;
     }
 
@@ -49,16 +50,6 @@ public class GameService {
         }
     }
 
-//    public void sendMessage(Message message, SimpMessageHeaderAccessor headerAccessor) {
-//        String playerSessionId = headerAccessor.getSessionId();
-//        String gameCode = gameSession.getGameCodeForPlayer(playerSessionId);
-//        if (gameCode != null) {
-//            message.setSender(playerSessionId);
-//            message.setGameCode(gameCode);
-//            sendToUsers(gameSession.getPlayerSessions(gameCode), "/queue/chat", message);
-//        }
-//    }
-
     public void startTimer(SimpMessageHeaderAccessor headerAccessor, String gameMode) {
         String playerSessionId = headerAccessor.getSessionId();
         gameSession.setGameMod(gameMode);
@@ -74,7 +65,6 @@ public class GameService {
             }, 1000);
             gameSession.getTimerTasks().put(gameCode, timerTask);
         }
-//        startTimer(gameCode, Integer.parseInt(message.getContent()));
     }
 
     public void stopTimer(SimpMessageHeaderAccessor headerAccessor) {
@@ -82,25 +72,6 @@ public class GameService {
         String gameCode = gameSession.getGameCodeForPlayer(playerSessionId);
         gameSession.stopTimer(gameCode);
     }
-//
-//    public void startTimer(String gameCode) {
-//        gameSession.setTimer(gameCode);
-//        if (!gameSession.getTimerTasks().containsKey(gameCode) || gameSession.getTimerTasks().get(gameCode).isCancelled()) {
-//            ScheduledFuture<?> timerTask = taskScheduler.scheduleAtFixedRate(() -> {
-//                handleTimerTick(gameCode);
-//                }
-//            , 1000);
-//            gameSession.getTimerTasks().put(gameCode, timerTask);
-//        }
-//    }
-
-//    private void handleTimerTick(String gameCode) {
-//        int timeLeft = gameSession.decrementTimer(gameCode);
-//        sendToUsers(gameSession.getPlayerSessions(gameCode), "/queue/getTimerValue", Integer.toString(timeLeft));
-//        if (timeLeft == 0) {
-//            gameSession.stopTimer(gameCode);
-//        }
-//    }
 
     public byte[] getTask(String gameCode) throws IOException {
         char lastChar = gameCode.charAt(gameCode.length() - 1);
@@ -109,6 +80,7 @@ public class GameService {
         byte[] imageBytes = Files.readAllBytes(filePath);
         return imageBytes;
     }
+
     private <T> void sendToUsers(List<String> playerSessions, String destination, T message) {
         for (String session : playerSessions) {
             SimpMessageHeaderAccessor headerAccessorForUser = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
@@ -116,5 +88,11 @@ public class GameService {
             headerAccessorForUser.setLeaveMutable(true);
             messagingTemplate.convertAndSendToUser(session, destination, message, headerAccessorForUser.getMessageHeaders());
         }
+    }
+
+    public String doStep(SimpMessageHeaderAccessor headerAccessor, String button) {
+        String playerSessionId = headerAccessor.getSessionId();
+        String gameCode = gameSession.getGameCodeForPlayer(playerSessionId);
+        return gameSession.doStep(gameCode, button);
     }
 }

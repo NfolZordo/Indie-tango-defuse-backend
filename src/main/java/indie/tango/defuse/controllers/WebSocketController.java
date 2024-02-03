@@ -1,11 +1,8 @@
 package indie.tango.defuse.controllers;
 
-import indie.tango.defuse.models.Message;
 import indie.tango.defuse.services.GameService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
-import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
@@ -14,9 +11,6 @@ import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 @Controller
 public class WebSocketController {
@@ -45,11 +39,6 @@ public class WebSocketController {
         return gameService.joinGame(gameCode, headerAccessor);
     }
 
-//    @MessageMapping("/sendMessage")
-//    public void sendMessage(Message message, SimpMessageHeaderAccessor headerAccessor) {
-//        gameService.sendMessage(message, headerAccessor);
-//    }
-
     @MessageMapping("/startTimer")
     public void startTimer(SimpMessageHeaderAccessor headerAccessor, String gameMode) {
         gameService.startTimer(headerAccessor, gameMode);
@@ -59,4 +48,11 @@ public class WebSocketController {
     public void stopTimer(SimpMessageHeaderAccessor headerAccessor) {
         gameService.stopTimer(headerAccessor);
     }
+
+    @MessageMapping("/doStep")
+    @SendToUser("/queue/doStep")
+    public ResponseEntity<String> doStep(SimpMessageHeaderAccessor headerAccessor, String button) {
+        return ResponseEntity.ok(gameService.doStep(headerAccessor,button));
+    }
+
 }
