@@ -27,7 +27,6 @@ public class GameSession {
     @Autowired
     private TaskScheduler taskScheduler;
 
-
     public GameMod getGameMod() {
         return gameMod;
     }
