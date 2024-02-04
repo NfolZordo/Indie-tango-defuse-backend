@@ -1,7 +1,9 @@
 package indie.tango.defuse.models;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Constants {
 
@@ -34,5 +36,18 @@ public class Constants {
             new Scenario(blueWire, redWire, greenButton, yellowWire),
             new Scenario(yellowButton, switchButton, blueButton, greenWire),
             new Scenario(blueWire, yellowButton, redWire, greenButton)
+    );
+
+    public static List<String> imgId = Arrays.asList(
+            "1nx-MsLVgF5ywZZYqF96FrLi83b3y5jpV",
+            "1d_V3nnL2_lK-FDK44JHhgALqyGflNnKx",
+            "1fne3_taCvjl-5408UvFIJpaaFNlhn-Lc",
+            "1-PDYI4hjr1Yz9livYO0vVR1lPGbZZcJF",
+            "1wAj2PtgD2UBzuynZMsIa9z5iq9Xhg_fR",
+            "1WVS6wqlYP42rUskNFH7lqBQUWtDszo5W",
+            "1xi5BtSmE4vryf67uZN4v5oiJnpmEo9Li",
+            "1c_GG6j6q8ZxI4iQKcO6sJR1sRAYX1p_n",
+            "19IS_bNdw-WErSQGVrZnkl6nwD__ZyX71",
+            "1SVacGw_lxFuwP5Q1D-bl2n3FJLJHmO2F"
     );
 }

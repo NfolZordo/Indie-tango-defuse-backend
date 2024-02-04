@@ -19,6 +19,7 @@ public class GameSession {
     private Map<String, ScheduledFuture<?>> timerTasks = new ConcurrentHashMap<>();
     private Map<String, List<Constants.Scenario>> stepsTaken = new ConcurrentHashMap<>();
     private Map<String, Integer> stepsCount = new ConcurrentHashMap<>();
+    private Map<String, Integer> countMistake = new ConcurrentHashMap<>();
 
     private GameMod gameMod;
 
@@ -63,6 +64,9 @@ public class GameSession {
 
     public void initStepsCount(String gameCode) {
         this.stepsCount.put(gameCode, 0);
+    }
+    public void initCountsError(String gameCode) {
+        this.countMistake.put(gameCode, 0);
     }
 
     public String getGameCodeForPlayer(String playerSessionId) {
@@ -117,7 +121,11 @@ public class GameSession {
                 result = "true";
             }
         } else {
+            this.countMistake.put(gameCode, this.countMistake.get(gameCode) + 1);
             result = "false";
+        }
+        if (this.countMistake.get(gameCode) > this.gameMod.getCountMistake()) {
+            result = "lose";
         }
         this.stepsCount.put(gameCode,this.stepsCount.get(gameCode) + 1);
         return result;

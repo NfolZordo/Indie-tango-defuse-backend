@@ -1,5 +1,6 @@
 package indie.tango.defuse.services;
 
+import indie.tango.defuse.models.Constants;
 import indie.tango.defuse.models.GameSession;
 import org.springframework.core.io.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +11,11 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.StandardCopyOption;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,6 +38,7 @@ public class GameService {
         String playerSessionId = headerAccessor.getSessionId();
         gameSession.addPlayerSession(gameCode, playerSessionId);
         gameSession.initStepsCount(gameCode);
+        gameSession.initCountsError(gameCode);
         return gameCode;
     }
 
@@ -73,13 +79,27 @@ public class GameService {
         gameSession.stopTimer(gameCode);
     }
 
-    public byte[] getTask(String gameCode) throws IOException {
-        char lastChar = gameCode.charAt(gameCode.length() - 1);
+//    public byte[] getTask(String gameCode) throws IOException {
+//        char lastChar = gameCode.charAt(gameCode.length() - 1);
+//
+//        Path filePath = Paths.get("src\\main\\resources\\task\\itd_" + lastChar + ".jpg");
+//        byte[] imageBytes = Files.readAllBytes(filePath);
+//        return imageBytes;
+//    }
+public byte[] getTask(String gameCode) throws IOException {
+    Integer lastChar = Integer.parseInt(gameCode.substring(gameCode.length() - 1));
 
-        Path filePath = Paths.get("src\\main\\resources\\task\\itd_" + lastChar + ".jpg");
-        byte[] imageBytes = Files.readAllBytes(filePath);
-        return imageBytes;
-    }
+    String imageUrl = "https://drive.usercontent.google.com/download?id=" + Constants.imgId.get(lastChar) + "&export=view";
+    URL url = new URL(imageUrl);
+
+    Path tempFile = Files.createTempFile("itd_" + lastChar, ".jpg");
+    Files.copy(url.openStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
+
+    byte[] imageBytes = Files.readAllBytes(tempFile);
+    Files.delete(tempFile);
+
+    return imageBytes;
+}
 
     private <T> void sendToUsers(List<String> playerSessions, String destination, T message) {
         for (String session : playerSessions) {
