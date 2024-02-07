@@ -1,17 +1,23 @@
 package indie.tango.defuse.controllers;
 
+import indie.tango.defuse.models.FriendsModel;
 import indie.tango.defuse.services.GameService;
+import io.micrometer.common.lang.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 public class WebSocketController {
@@ -21,8 +27,8 @@ public class WebSocketController {
 
     @MessageMapping("/createGame")
     @SendToUser("/queue/gameCode")
-    public String createGame(SimpMessageHeaderAccessor headerAccessor) {
-        return gameService.createGame(headerAccessor);
+    public String createGame(SimpMessageHeaderAccessor headerAccessor, String userName) {
+        return gameService.createGame(headerAccessor, userName);
     }
 
     @MessageMapping("/getTask")
@@ -36,18 +42,20 @@ public class WebSocketController {
 
     @MessageMapping("/joinGame")
     @SendToUser("/queue/joinResult")
-    public String joinGame(@Payload String gameCode, SimpMessageHeaderAccessor headerAccessor) {
-        return gameService.joinGame(gameCode, headerAccessor);
+    public String joinGame(@Payload String gameCode, SimpMessageHeaderAccessor headerAccessor, String userName) {
+        return gameService.joinGame(gameCode, headerAccessor, userName);
     }
 
     @MessageMapping("/startTimer")
-    public void startTimer(SimpMessageHeaderAccessor headerAccessor, String gameMode) {
-        gameService.startTimer(headerAccessor, gameMode);
+    public void startTimer(SimpMessageHeaderAccessor headerAccessor, @Payload Map<String, String> payload) {
+        String gameMode = payload.get("gameMode");
+        String token = payload.get("Authorization");
+        gameService.startTimer(headerAccessor, gameMode, token);
     }
 
     @MessageMapping("/stopTimer")
-    public void stopTimer(SimpMessageHeaderAccessor headerAccessor) {
-        gameService.stopTimer(headerAccessor);
+    public void stopTimer(SimpMessageHeaderAccessor headerAccessor, @RequestHeader("Authorization") String token) {
+        gameService.stopTimer(headerAccessor, token);
     }
 
     @MessageMapping("/doStep")
@@ -56,4 +64,10 @@ public class WebSocketController {
         return ResponseEntity.ok(gameService.doStep(headerAccessor,button));
     }
 
+//
+//
+//    @GetMapping("/getFriends")
+//    public ResponseEntity<List<String>> getFriends() {
+//        return ResponseEntity.ok(gameService.getFriends("qwe@qwe"));
+//    }
 }

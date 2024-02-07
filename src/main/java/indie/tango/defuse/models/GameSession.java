@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
 import java.util.Random;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +22,8 @@ public class GameSession {
     private Map<String, List<Constants.Scenario>> stepsTaken = new ConcurrentHashMap<>();
     private Map<String, Integer> stepsCount = new ConcurrentHashMap<>();
     private Map<String, Integer> countMistake = new ConcurrentHashMap<>();
+
+    private final Map<String, String> playerOnline = new ConcurrentHashMap<>();
 
     private GameMod gameMod;
 
@@ -58,8 +62,13 @@ public class GameSession {
         return String.valueOf(code);
     }
 
-    public void addPlayerSession(String gameCode, String playerSessionId) {
+    public void addPlayerSession(String gameCode, String playerSessionId, String userName) {
         playerSessions.put(playerSessionId, gameCode);
+        playerOnline.put(userName, gameCode);
+    }
+
+    public void removeOnlinePlayer(String userName) {
+        this.playerOnline.remove(userName);
     }
 
     public void initStepsCount(String gameCode) {
@@ -129,5 +138,17 @@ public class GameSession {
         }
         this.stepsCount.put(gameCode,this.stepsCount.get(gameCode) + 1);
         return result;
+    }
+
+    public Map<String, String> filterOnlineFriends(List<String> allFriends) {
+        Map<String, String> onlineFriends = new HashMap<>();
+
+        for (String email : allFriends) {
+            // Перевірка, чи є друг онлайн
+            if (this.playerOnline.containsKey(email)) {
+                onlineFriends.put(email, this.playerOnline.get(email));
+            }
+        }
+        return onlineFriends;
     }
 }
