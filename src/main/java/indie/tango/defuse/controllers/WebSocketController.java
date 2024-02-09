@@ -27,8 +27,8 @@ public class WebSocketController {
 
     @MessageMapping("/createGame")
     @SendToUser("/queue/gameCode")
-    public String createGame(SimpMessageHeaderAccessor headerAccessor, String userName) {
-        return gameService.createGame(headerAccessor, userName);
+    public String createGame(SimpMessageHeaderAccessor headerAccessor, @RequestHeader("Authorization") String token) {
+        return gameService.createGame(headerAccessor, token);
     }
 
     @MessageMapping("/getTask")
@@ -42,8 +42,10 @@ public class WebSocketController {
 
     @MessageMapping("/joinGame")
     @SendToUser("/queue/joinResult")
-    public String joinGame(@Payload String gameCode, SimpMessageHeaderAccessor headerAccessor, String userName) {
-        return gameService.joinGame(gameCode, headerAccessor, userName);
+    public String joinGame(SimpMessageHeaderAccessor headerAccessor, @Payload Map<String, String> payload) {
+        String gameCode = payload.get("gameCode");
+        String token = payload.get("Authorization");
+        return gameService.joinGame(gameCode, headerAccessor, token);
     }
 
     @MessageMapping("/startTimer")
@@ -63,11 +65,4 @@ public class WebSocketController {
     public ResponseEntity<String> doStep(SimpMessageHeaderAccessor headerAccessor, String button) {
         return ResponseEntity.ok(gameService.doStep(headerAccessor,button));
     }
-
-//
-//
-//    @GetMapping("/getFriends")
-//    public ResponseEntity<List<String>> getFriends() {
-//        return ResponseEntity.ok(gameService.getFriends("qwe@qwe"));
-//    }
 }

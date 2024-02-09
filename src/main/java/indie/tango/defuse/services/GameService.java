@@ -41,25 +41,27 @@ public class GameService {
     private TaskScheduler taskScheduler;
     private final UserRepository userRepository;
     private final JwtService jwtService;
-        private ScheduledFuture<?> timerTask;
+    private ScheduledFuture<?> timerTask;
 
-    public String createGame(SimpMessageHeaderAccessor headerAccessor, String userName) {
+    public String createGame(SimpMessageHeaderAccessor headerAccessor, String token) {
+        String email = jwtService.extractUsername(token.substring(7));
         String gameCode = gameSession.generateGameCode();
         String playerSessionId = headerAccessor.getSessionId();
-        gameSession.addPlayerSession(gameCode, playerSessionId, userName);
+        gameSession.addPlayerSession(gameCode, playerSessionId, email);
         gameSession.initStepsCount(gameCode);
         gameSession.initCountsError(gameCode);
         return gameCode;
     }
 
-    public String joinGame(String gameCode, SimpMessageHeaderAccessor headerAccessor, String userName) {
+    public String joinGame(String gameCode, SimpMessageHeaderAccessor headerAccessor, String token) {
+        String email = jwtService.extractUsername(token.substring(7));
         String playerSessionId = headerAccessor.getSessionId();
         String existingGameCode = gameSession.getGameCodeForPlayer(playerSessionId);
         if (existingGameCode != null) {
             return "Already joined a game";
         }
         if (gameSession.isGameExists(gameCode)) {
-            gameSession.addPlayerSession(gameCode, playerSessionId, userName);
+            gameSession.addPlayerSession(gameCode, playerSessionId, email);
             return "Successfully joined the game";
         } else {
             return "Game not found";
@@ -94,27 +96,27 @@ public class GameService {
 
     }
 
-//    public byte[] getTask(String gameCode) throws IOException {
+    //    public byte[] getTask(String gameCode) throws IOException {
 //        char lastChar = gameCode.charAt(gameCode.length() - 1);
 //
 //        Path filePath = Paths.get("src\\main\\resources\\task\\itd_" + lastChar + ".jpg");
 //        byte[] imageBytes = Files.readAllBytes(filePath);
 //        return imageBytes;
 //    }
-public byte[] getTask(String gameCode) throws IOException {
-    Integer lastChar = Integer.parseInt(gameCode.substring(gameCode.length() - 1));
+    public byte[] getTask(String gameCode) throws IOException {
+        Integer lastChar = Integer.parseInt(gameCode.substring(gameCode.length() - 1));
 
-    String imageUrl = "https://drive.usercontent.google.com/download?id=" + Constants.imgId.get(lastChar) + "&export=view";
-    URL url = new URL(imageUrl);
+        String imageUrl = "https://drive.usercontent.google.com/download?id=" + Constants.imgId.get(lastChar) + "&export=view";
+        URL url = new URL(imageUrl);
 
-    Path tempFile = Files.createTempFile("itd_" + lastChar, ".jpg");
-    Files.copy(url.openStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
+        Path tempFile = Files.createTempFile("itd_" + lastChar, ".jpg");
+        Files.copy(url.openStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
 
-    byte[] imageBytes = Files.readAllBytes(tempFile);
-    Files.delete(tempFile);
+        byte[] imageBytes = Files.readAllBytes(tempFile);
+        Files.delete(tempFile);
 
-    return imageBytes;
-}
+        return imageBytes;
+    }
 
     private <T> void sendToUsers(List<String> playerSessions, String destination, T message) {
         for (String session : playerSessions) {
